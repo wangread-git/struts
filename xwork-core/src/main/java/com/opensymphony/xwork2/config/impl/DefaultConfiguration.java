@@ -15,75 +15,19 @@
  */
 package com.opensymphony.xwork2.config.impl;
 
-import com.opensymphony.xwork2.ActionContext;
-import com.opensymphony.xwork2.DefaultLocaleProvider;
-import com.opensymphony.xwork2.DefaultTextProvider;
-import com.opensymphony.xwork2.FileManager;
-import com.opensymphony.xwork2.FileManagerFactory;
-import com.opensymphony.xwork2.LocaleProvider;
-import com.opensymphony.xwork2.ObjectFactory;
-import com.opensymphony.xwork2.TextProvider;
-import com.opensymphony.xwork2.XWorkConstants;
-import com.opensymphony.xwork2.config.Configuration;
-import com.opensymphony.xwork2.config.ConfigurationException;
-import com.opensymphony.xwork2.config.ConfigurationProvider;
-import com.opensymphony.xwork2.config.ContainerProvider;
-import com.opensymphony.xwork2.config.FileManagerFactoryProvider;
-import com.opensymphony.xwork2.config.FileManagerProvider;
-import com.opensymphony.xwork2.config.PackageProvider;
-import com.opensymphony.xwork2.config.RuntimeConfiguration;
-import com.opensymphony.xwork2.config.entities.ActionConfig;
-import com.opensymphony.xwork2.config.entities.InterceptorMapping;
-import com.opensymphony.xwork2.config.entities.PackageConfig;
-import com.opensymphony.xwork2.config.entities.ResultConfig;
-import com.opensymphony.xwork2.config.entities.ResultTypeConfig;
-import com.opensymphony.xwork2.config.entities.UnknownHandlerConfig;
+import com.opensymphony.xwork2.*;
+import com.opensymphony.xwork2.config.*;
+import com.opensymphony.xwork2.config.entities.*;
 import com.opensymphony.xwork2.config.providers.InterceptorBuilder;
-import com.opensymphony.xwork2.conversion.ConversionAnnotationProcessor;
-import com.opensymphony.xwork2.conversion.ConversionFileProcessor;
-import com.opensymphony.xwork2.conversion.ConversionPropertiesProcessor;
-import com.opensymphony.xwork2.conversion.ObjectTypeDeterminer;
-import com.opensymphony.xwork2.conversion.TypeConverter;
-import com.opensymphony.xwork2.conversion.TypeConverterCreator;
-import com.opensymphony.xwork2.conversion.TypeConverterHolder;
-import com.opensymphony.xwork2.conversion.impl.ArrayConverter;
-import com.opensymphony.xwork2.conversion.impl.CollectionConverter;
-import com.opensymphony.xwork2.conversion.impl.DateConverter;
-import com.opensymphony.xwork2.conversion.impl.DefaultConversionAnnotationProcessor;
-import com.opensymphony.xwork2.conversion.impl.DefaultConversionFileProcessor;
-import com.opensymphony.xwork2.conversion.impl.DefaultConversionPropertiesProcessor;
-import com.opensymphony.xwork2.conversion.impl.DefaultObjectTypeDeterminer;
-import com.opensymphony.xwork2.conversion.impl.DefaultTypeConverterCreator;
-import com.opensymphony.xwork2.conversion.impl.DefaultTypeConverterHolder;
-import com.opensymphony.xwork2.conversion.impl.NumberConverter;
-import com.opensymphony.xwork2.conversion.impl.StringConverter;
-import com.opensymphony.xwork2.conversion.impl.XWorkBasicConverter;
-import com.opensymphony.xwork2.conversion.impl.XWorkConverter;
-import com.opensymphony.xwork2.factory.ActionFactory;
-import com.opensymphony.xwork2.factory.ConverterFactory;
-import com.opensymphony.xwork2.factory.DefaultActionFactory;
-import com.opensymphony.xwork2.factory.DefaultConverterFactory;
-import com.opensymphony.xwork2.factory.DefaultInterceptorFactory;
-import com.opensymphony.xwork2.factory.DefaultResultFactory;
-import com.opensymphony.xwork2.factory.DefaultUnknownHandlerFactory;
-import com.opensymphony.xwork2.factory.InterceptorFactory;
-import com.opensymphony.xwork2.factory.ResultFactory;
-import com.opensymphony.xwork2.factory.UnknownHandlerFactory;
-import com.opensymphony.xwork2.inject.Container;
-import com.opensymphony.xwork2.inject.ContainerBuilder;
-import com.opensymphony.xwork2.inject.Context;
-import com.opensymphony.xwork2.inject.Factory;
-import com.opensymphony.xwork2.inject.Scope;
+import com.opensymphony.xwork2.conversion.*;
+import com.opensymphony.xwork2.conversion.impl.*;
+import com.opensymphony.xwork2.factory.*;
+import com.opensymphony.xwork2.inject.*;
 import com.opensymphony.xwork2.ognl.OgnlReflectionProvider;
 import com.opensymphony.xwork2.ognl.OgnlUtil;
 import com.opensymphony.xwork2.ognl.OgnlValueStackFactory;
 import com.opensymphony.xwork2.ognl.accessor.CompoundRootAccessor;
-import com.opensymphony.xwork2.util.CompoundRoot;
-import com.opensymphony.xwork2.util.OgnlTextParser;
-import com.opensymphony.xwork2.util.PatternMatcher;
-import com.opensymphony.xwork2.util.TextParser;
-import com.opensymphony.xwork2.util.ValueStack;
-import com.opensymphony.xwork2.util.ValueStackFactory;
+import com.opensymphony.xwork2.util.*;
 import com.opensymphony.xwork2.util.fs.DefaultFileManager;
 import com.opensymphony.xwork2.util.fs.DefaultFileManagerFactory;
 import com.opensymphony.xwork2.util.location.LocatableProperties;
@@ -92,14 +36,7 @@ import com.opensymphony.xwork2.util.logging.LoggerFactory;
 import com.opensymphony.xwork2.util.reflection.ReflectionProvider;
 import ognl.PropertyAccessor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 
 /**
@@ -236,7 +173,10 @@ public class DefaultConfiguration implements Configuration {
         for (final ContainerProvider containerProvider : providers)
         {
             bootstrap.inject(containerProvider);
+            //用configuration初始化provider，后面的操作会将各种配置加载到这个configuration当中，
+            //以后就可以通过configuration来获取配置信息了
             containerProvider.init(this);
+            //读取Struts文件，将bean、constant、unknown-handler-stack等全局信息注册到props当中
             containerProvider.register(builder, props);
         }
         props.setConstants(builder);
@@ -261,6 +201,7 @@ public class DefaultConfiguration implements Configuration {
             {
                 if (containerProvider instanceof PackageProvider) {
                     container.inject(containerProvider);
+                    //加载Struts的package配置
                     ((PackageProvider)containerProvider).loadPackages();
                     packageProviders.add((PackageProvider)containerProvider);
                 }
@@ -278,6 +219,7 @@ public class DefaultConfiguration implements Configuration {
             rebuildRuntimeConfiguration();
         } finally {
             if (oldContext == null) {
+                //清除context，否则后续doFilter时会受到影响
                 ActionContext.setContext(null);
             }
         }
