@@ -167,8 +167,11 @@ public class DefaultConfiguration implements Configuration {
         loadedFileNames.clear();
         List<PackageProvider> packageProviders = new ArrayList<PackageProvider>();
 
+        //用来保存struts声明的各种常量
         ContainerProperties props = new ContainerProperties();
+        //容器构建器，用来构建最终的container
         ContainerBuilder builder = new ContainerBuilder();
+        //创建引导容器，预先装载内置的bean
         Container bootstrap = createBootstrapContainer(providers);
         for (final ContainerProvider containerProvider : providers)
         {
@@ -176,9 +179,10 @@ public class DefaultConfiguration implements Configuration {
             //用configuration初始化provider，后面的操作会将各种配置加载到这个configuration当中，
             //以后就可以通过configuration来获取配置信息了
             containerProvider.init(this);
-            //读取Struts文件，将bean、constant、unknown-handler-stack等全局信息注册到props当中
+            //读取struts配置文件，将constance加载到props中，根据Provider创建factory，并将factory注册到builder中
             containerProvider.register(builder, props);
         }
+        //根据props构建常量factory（创建的对象是默认的），并将factory注册到builder中
         props.setConstants(builder);
 
         builder.factory(Configuration.class, new Factory<Configuration>() {
@@ -192,6 +196,7 @@ public class DefaultConfiguration implements Configuration {
             // Set the bootstrap container for the purposes of factory creation
 
             setContext(bootstrap);
+            //创建最终的容器，将builder的factories设置到container中
             container = builder.create(false);
             setContext(container);
             objectFactory = container.getInstance(ObjectFactory.class);

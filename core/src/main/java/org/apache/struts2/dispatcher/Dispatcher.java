@@ -330,6 +330,7 @@ public class Dispatcher {
     }
 
     private void init_FileManager() throws ClassNotFoundException {
+        //web.xml中init-param如果配置了struts.fileManager，就用struts.fileManager对应的FileManager
         if (initParams.containsKey(StrutsConstants.STRUTS_FILE_MANAGER)) {
             final String fileManagerClassName = initParams.get(StrutsConstants.STRUTS_FILE_MANAGER);
             final Class<FileManager> fileManagerClass = (Class<FileManager>) Class.forName(fileManagerClassName);
@@ -360,6 +361,7 @@ public class Dispatcher {
     }
 
     private void init_TraditionalXmlConfigurations() {
+        //检查web.xml的init-param中是否配置了config属性，如果没有，就加载默认的struts配置文件：struts-default.xml,struts-plugin.xml,struts.xml
         String configPaths = initParams.get("config");
         if (configPaths == null) {
             configPaths = DEFAULT_CONFIGURATION_PATHS;
@@ -468,14 +470,25 @@ public class Dispatcher {
     	}
 
         try {
+            //初始化各种加载器
+
+            //初始化并添加FileManagerProvider，FileManagerProvider提供了fileManager，用于文件的io操作
             init_FileManager();
+            //初始化并添加DefaultPropertiesProvider，DefaultPropertiesProvider用来加载default.properties
             init_DefaultProperties(); // [1]
+            //初始化并添加StrutsXmlConfigurationProvider，StrutsXmlConfigurationProvider用来加载struts.xml配置
+            //文件，默认为struts-default.xml、struts-plugin.xml、struts.xml
             init_TraditionalXmlConfigurations(); // [2]
+            //用来加载struts.properties配置文件
             init_LegacyStrutsProperties(); // [3]
+            //初始化并添加自定义Provider，自定义Provider在web.xml的initParams中设置
             init_CustomConfigurationProviders(); // [5]
+            //web.xml配置的init-param参数 加载器  最终会保存到Container容器中
             init_FilterInitParameters() ; // [6]
+            //用来将factories中的Factory设置别名
             init_AliasStandardObjects() ; // [7]
 
+            //初始化并预加载configuration
             Container container = init_PreloadConfiguration();
             container.inject(this);
             init_CheckWebLogicWorkaround(container);

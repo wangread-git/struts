@@ -62,6 +62,7 @@ public class ConfigurationManager {
      */
     public synchronized Configuration getConfiguration() {
         if (configuration == null) {
+            //设置默认configuration
             setConfiguration(createConfiguration(defaultFrameworkBeanName));
             try {
                 configuration.reloadContainer(getContainerProviders());

@@ -39,6 +39,7 @@ public class DefaultPropertiesProvider extends PropertiesConfigurationProvider {
 
     public void register(ContainerBuilder builder, LocatableProperties props) throws ConfigurationException {
         try {
+            //加载org/apache/struts2/default.properties属性文件
             PropertiesSettings defaultSettings = new PropertiesSettings("org/apache/struts2/default");
             loadSettings(props, defaultSettings);
         } catch (Exception e) {

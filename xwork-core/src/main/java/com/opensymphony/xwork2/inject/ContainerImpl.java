@@ -63,6 +63,7 @@ class ContainerImpl implements Container {
 	/**
 	 * Field and method injectors.
 	 */
+    //injectors，声明的create方法用于get返回null时，create出injectors并put到injectors中
 	final Map<Class<?>, List<Injector>> injectors =
 			new ReferenceCache<Class<?>, List<Injector>>() {
 				@Override
@@ -77,6 +78,7 @@ class ContainerImpl implements Container {
 	 * Recursively adds injectors for fields and methods from the given class to the given list. Injects parent classes
 	 * before sub classes.
 	 */
+    //以递归的方式，从当前类开始，获取父类（包含interface）的injectors
 	void addInjectors( Class clazz, List<Injector> injectors ) {
 		if (clazz == Object.class) {
 			return;
@@ -119,6 +121,7 @@ class ContainerImpl implements Container {
 				});
 	}
 
+    //查出fields中有Inject注解的，并创建Injector
 	void addInjectorsForFields( Field[] fields, boolean statics,
 								List<Injector> injectors ) {
 		addInjectorsForMembers(Arrays.asList(fields), statics, injectors,
@@ -130,6 +133,7 @@ class ContainerImpl implements Container {
 				});
 	}
 
+    //
 	<M extends Member & AnnotatedElement> void addInjectorsForMembers(
 			List<M> members, boolean statics, List<Injector> injectors,
 			InjectorFactory<M> injectorFactory ) {
@@ -149,6 +153,7 @@ class ContainerImpl implements Container {
 		}
 	}
 
+    //用来创建Injector的工厂
 	interface InjectorFactory<M extends Member & AnnotatedElement> {
 
 		Injector create( ContainerImpl container, M member, String name )
@@ -159,6 +164,7 @@ class ContainerImpl implements Container {
 		return Modifier.isStatic(member.getModifiers());
 	}
 
+    //针对field的Injector，实现了inject方法
 	static class FieldInjector implements Injector {
 
 		final Field field;
@@ -182,6 +188,7 @@ class ContainerImpl implements Container {
 			}
 
 			Key<?> key = Key.newInstance(field.getType(), name);
+            //根据field的类型获取工厂
 			factory = container.getFactory(key);
 			if (factory == null) {
 				throw new MissingDependencyException(
@@ -191,6 +198,7 @@ class ContainerImpl implements Container {
 			this.externalContext = ExternalContext.newInstance(field, key, container);
 		}
 
+        //通过factory创建对象，设置为field的值
 		public void inject( InternalContext context, Object o ) {
 			ExternalContext<?> previous = context.getExternalContext();
 			context.setExternalContext(externalContext);
@@ -264,6 +272,7 @@ class ContainerImpl implements Container {
 		return null;
 	}
 
+    //方法设置了Injector注解的，实现了inject方法
 	static class MethodInjector implements Injector {
 
 		final Method method;
@@ -294,6 +303,7 @@ class ContainerImpl implements Container {
 					method, method.getParameterAnnotations(), parameterTypes, name);
 		}
 
+        //调用method的invoke方法
 		public void inject( InternalContext context, Object o ) {
 			try {
 				method.invoke(o, getParameters(method, context, parameterInjectors));
@@ -487,6 +497,7 @@ class ContainerImpl implements Container {
 	}
 
 	void inject( Object o, InternalContext context ) {
+        //injectors.get包含了两个操作，先去get，如果返回结果为null，就用调用create方法，将结果put到injectors当中
 		List<Injector> injectors = this.injectors.get(o.getClass());
 		for ( Injector injector : injectors ) {
 			injector.inject(context, o);
@@ -621,6 +632,7 @@ class ContainerImpl implements Container {
 	/**
 	 * Injects a field or method in a given object.
 	 */
+    //Injector
 	interface Injector extends Serializable {
 
 		void inject( InternalContext context, Object o );
