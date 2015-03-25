@@ -186,7 +186,9 @@ public class ObjectFactory implements Serializable {
      */
     public Object buildBean(String className, Map<String, Object> extraContext, boolean injectInternal) throws Exception {
         Class clazz = getClassInstance(className);
+        //创建bean实例，并且将spring上下文中的bean注入到bean的setter中（如果有的话）
         Object obj = buildBean(clazz, extraContext);
+        //给obj打了Inject注解的字段或方法注入，部分字段或方法不是由spring创建的，所以需要struts自己来注入
         if (injectInternal) {
             injectInternalBeans(obj);
         }

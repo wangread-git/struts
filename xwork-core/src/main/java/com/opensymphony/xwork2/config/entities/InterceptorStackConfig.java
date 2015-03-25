@@ -39,6 +39,10 @@ public class InterceptorStackConfig extends Located implements Serializable {
 
     /**
      * A list of InterceptorMapping object
+     * 保存stack下的interceptor实例
+     *
+     * @see com.opensymphony.xwork2.config.entities.InterceptorMapping
+     * @see com.opensymphony.xwork2.interceptor.Interceptor
      */
     protected List<InterceptorMapping> interceptors;
     protected String name;

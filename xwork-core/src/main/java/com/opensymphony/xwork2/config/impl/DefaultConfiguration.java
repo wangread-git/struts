@@ -51,14 +51,16 @@ public class DefaultConfiguration implements Configuration {
 
 
     // Programmatic Action Configurations
+    //重要，用于保存package上下文信息（包括resultType、action、interceptor等配置）
     protected Map<String, PackageConfig> packageContexts = new LinkedHashMap<String, PackageConfig>();
     protected RuntimeConfiguration runtimeConfiguration;
+    //重要，struts容器，用于保存工厂及实例
     protected Container container;
     protected String defaultFrameworkBeanName;
     protected Set<String> loadedFileNames = new TreeSet<String>();
     protected List<UnknownHandlerConfig> unknownHandlerStack;
 
-
+    //重要，工厂类用于创建实例（action、interceptor等）
     ObjectFactory objectFactory;
 
     public DefaultConfiguration() {
@@ -171,7 +173,8 @@ public class DefaultConfiguration implements Configuration {
         ContainerProperties props = new ContainerProperties();
         //容器构建器，用来构建最终的container
         ContainerBuilder builder = new ContainerBuilder();
-        //创建引导容器，预先装载内置的bean
+        //创建引导容器，预先加载内置的factory，设置好基本的injector，等Provider初始化后，就可以利用这些已经创建
+        //好的factory、injector来加载struts配置文件定义的类，此时获取到全部信息后就可以创建最终的container了
         Container bootstrap = createBootstrapContainer(providers);
         for (final ContainerProvider containerProvider : providers)
         {
@@ -241,6 +244,7 @@ public class DefaultConfiguration implements Configuration {
         return context;
     }
 
+    //预先加载内置的工厂，在创建真正的容器的时候，会利用这些工厂来创建对象，从而实现inject
     protected Container createBootstrapContainer(List<ContainerProvider> providers) {
         ContainerBuilder builder = new ContainerBuilder();
         boolean fmFactoryRegistered = false;

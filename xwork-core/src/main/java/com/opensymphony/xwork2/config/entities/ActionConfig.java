@@ -51,6 +51,7 @@ public class ActionConfig extends Located implements Serializable {
     public static final String DEFAULT_METHOD = "execute";
     public static final String WILDCARD = "*";
 
+    //interceptor-ref
     protected List<InterceptorMapping> interceptors; // a list of interceptorMapping Objects eg. List<InterceptorMapping>
     protected Map<String,String> params;
     protected Map<String, ResultConfig> results;

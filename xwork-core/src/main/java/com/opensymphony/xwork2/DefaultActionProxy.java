@@ -163,6 +163,8 @@ public class DefaultActionProxy implements ActionProxy, Serializable {
     private void resolveMethod() {
         // if the method is set to null, use the one from the configuration
         // if the one from the configuration is also null, use "execute"
+
+        //判断struts.xml中配置的method是否为空，如果为空的话就取默认方法（execute）
         if (StringUtils.isEmpty(this.method)) {
             this.method = config.getMethodName();
             if (StringUtils.isEmpty(this.method)) {
@@ -176,6 +178,7 @@ public class DefaultActionProxy implements ActionProxy, Serializable {
         String profileKey = "create DefaultActionProxy: ";
         try {
             UtilTimerStack.push(profileKey);
+            //从actionConfig中根据namespace和actionName获取ActionConfig
             config = configuration.getRuntimeConfiguration().getActionConfig(namespace, actionName);
 
             if (config == null && unknownHandlerManager.hasUnknownHandlers()) {

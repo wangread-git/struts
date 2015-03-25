@@ -27,6 +27,7 @@ import java.security.AccessControlException;
 
 /**
  * Default {@link Container} implementation.
+ * Container最主要的两个方法是inject和getInstance，即注入和实例化，getInstance由factories提供的工厂来create实例
  *
  * @author crazybob@google.com (Bob Lee)
  * @see ContainerBuilder
@@ -497,6 +498,7 @@ class ContainerImpl implements Container {
 	}
 
 	void inject( Object o, InternalContext context ) {
+        //先将object自身添加到injectors当中
         //injectors.get包含了两个操作，先去get，如果返回结果为null，就用调用create方法，将结果put到injectors当中
 		List<Injector> injectors = this.injectors.get(o.getClass());
 		for ( Injector injector : injectors ) {

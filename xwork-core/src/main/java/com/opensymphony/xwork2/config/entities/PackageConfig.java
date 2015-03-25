@@ -42,6 +42,12 @@ public class PackageConfig extends Located implements Comparable, Serializable, 
 
     protected Map<String, ActionConfig> actionConfigs;
     protected Map<String, ResultConfig> globalResultConfigs;
+    /**
+     * 重要，用于保存interceptor配置信息（包括实例）
+     *
+     * @see com.opensymphony.xwork2.config.entities.InterceptorConfig 保存了interceptor的配置
+     * @see com.opensymphony.xwork2.config.entities.InterceptorStackConfig 保存了interceptor的实例
+     */
     protected Map<String, Object> interceptorConfigs;
     protected Map<String, ResultTypeConfig> resultTypeConfigs;
     protected List<ExceptionMappingConfig> globalExceptionMappingConfigs;

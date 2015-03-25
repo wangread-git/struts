@@ -15,36 +15,32 @@
  */
 package com.opensymphony.xwork2.config.providers;
 
-import com.opensymphony.xwork2.Action;
-import com.opensymphony.xwork2.FileManager;
-import com.opensymphony.xwork2.FileManagerFactory;
-import com.opensymphony.xwork2.ObjectFactory;
-import com.opensymphony.xwork2.XWorkException;
+import com.opensymphony.xwork2.*;
 import com.opensymphony.xwork2.config.Configuration;
 import com.opensymphony.xwork2.config.ConfigurationException;
 import com.opensymphony.xwork2.config.ConfigurationProvider;
 import com.opensymphony.xwork2.config.ConfigurationUtil;
 import com.opensymphony.xwork2.config.entities.*;
-import com.opensymphony.xwork2.config.entities.UnknownHandlerConfig;
 import com.opensymphony.xwork2.config.impl.LocatableFactory;
 import com.opensymphony.xwork2.inject.Container;
 import com.opensymphony.xwork2.inject.ContainerBuilder;
 import com.opensymphony.xwork2.inject.Inject;
 import com.opensymphony.xwork2.inject.Scope;
-import com.opensymphony.xwork2.util.*;
+import com.opensymphony.xwork2.util.ClassLoaderUtil;
+import com.opensymphony.xwork2.util.ClassPathFinder;
+import com.opensymphony.xwork2.util.DomHelper;
+import com.opensymphony.xwork2.util.TextParseUtil;
 import com.opensymphony.xwork2.util.location.LocatableProperties;
 import com.opensymphony.xwork2.util.location.Location;
 import com.opensymphony.xwork2.util.location.LocationUtils;
 import com.opensymphony.xwork2.util.logging.Logger;
 import com.opensymphony.xwork2.util.logging.LoggerFactory;
-
+import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -131,6 +127,7 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
     public void init(Configuration configuration) {
         this.configuration = configuration;
         this.includedFileNames = configuration.getLoadedFileNames();
+        //递归处理include节点，生成Document集合
         loadDocuments(configFileName);
     }
 
@@ -190,9 +187,11 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
 
                     final String nodeName = child.getNodeName();
 
+                    //如果是bean节点，解析出type、name、class等字段，
                     if ("bean".equals(nodeName)) {
                         String type = child.getAttribute("type");
                         String name = child.getAttribute("name");
+                        //实现类
                         String impl = child.getAttribute("class");
                         String onlyStatic = child.getAttribute("static");
                         String scopeStr = child.getAttribute("scope");
@@ -239,6 +238,7 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
                                 if (LOG.isDebugEnabled()) {
                                     LOG.debug("Loaded type:" + type + " name:" + name + " impl:" + impl);
                                 }
+                                //注册到builder的工厂中
                                 containerBuilder.factory(ctype, name, new LocatableFactory(name, ctype, cimpl, scope, childNode), scope);
                             }
                             loadedBeans.put(ctype.getName() + name, child);
@@ -254,6 +254,7 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
                     } else if ("constant".equals(nodeName)) {
                         String name = child.getAttribute("name");
                         String value = child.getAttribute("value");
+                        //添加常量到props中
                         props.setProperty(name, value, childNode);
                     } else if (nodeName.equals("unknown-handler-stack")) {
                         List<UnknownHandlerConfig> unknownHandlerStack = new ArrayList<UnknownHandlerConfig>();
@@ -312,6 +313,8 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
 
         documents.clear();
         declaredPackages.clear();
+
+        //gc
         configuration = null;
     }
 
@@ -402,6 +405,7 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
     }
 
     protected void addAction(Element actionElement, PackageConfig.Builder packageContext) throws ConfigurationException {
+        //解析出name、class、method属性
         String name = actionElement.getAttribute("name");
         String className = actionElement.getAttribute("class");
         String methodName = actionElement.getAttribute("method");
@@ -520,6 +524,7 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
             return packageConfig;
         }
 
+        //PackageConfig构建器
         PackageConfig.Builder newPackage = buildPackageContext(packageElement);
 
         if (newPackage.isNeedsRefresh()) {
@@ -559,7 +564,9 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
         // load the default action reference for this package
         loadDefaultActionRef(newPackage, packageElement);
 
+        //构建package配置
         PackageConfig cfg = newPackage.build();
+        //添加到configuration中
         configuration.addPackageConfig(cfg.getName(), cfg);
         return cfg;
     }
@@ -654,12 +661,14 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
                     "a custom ObjectFactory or Interceptor.", packageElement);
         }
 
+        //PackageConfig构建器
         PackageConfig.Builder cfg = new PackageConfig.Builder(name)
                 .namespace(namespace)
                 .isAbstract(isAbstract)
                 .strictMethodInvocation(strictDMI)
                 .location(DomHelper.getLocationObject(packageElement));
 
+        //添加parent
         if (StringUtils.isNotEmpty(StringUtils.defaultString(parent))) { // has parents, let's look it up
             List<PackageConfig> parents = new ArrayList<PackageConfig>();
             for (String parentPackageName : ConfigurationUtil.buildParentListFromString(parent)) {
@@ -707,6 +716,7 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
                 }
 
                 // there is no result type, so let's inherit from the parent package
+                //从父package中取出默认的resultType
                 if (StringUtils.isEmpty(resultType)) {
                     resultType = packageContext.getFullDefaultResultType();
 
@@ -734,6 +744,7 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
                     throw new ConfigurationException("Result type '" + resultType + "' is invalid");
                 }
 
+                //取出result的param
                 Map<String, String> resultParams = XmlHelper.getParams(resultElement);
 
                 if (resultParams.size() == 0) // maybe we just have a body - therefore a default parameter
@@ -747,6 +758,7 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
                             StringBuilder paramValue = new StringBuilder();
                             for (int j = 0; j < resultElement.getChildNodes().getLength(); j++) {
                                 if (resultElement.getChildNodes().item(j).getNodeType() == Node.TEXT_NODE) {
+                                    //取出value
                                     String val = resultElement.getChildNodes().item(j).getNodeValue();
                                     if (val != null) {
                                         paramValue.append(val);
@@ -942,8 +954,10 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
         for (int i = 0; i < interceptorStackList.getLength(); i++) {
             Element interceptorStackElement = (Element) interceptorStackList.item(i);
 
+            //加载拦截器栈
             InterceptorStackConfig config = loadInterceptorStack(interceptorStackElement, context);
 
+            //将拦截器栈的配置添加到package上下文中
             context.addInterceptorStackConfig(config);
         }
     }
@@ -956,15 +970,19 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
             String name = interceptorElement.getAttribute("name");
             String className = interceptorElement.getAttribute("class");
 
+            //interceptor的param，如：
+            //<interceptor name="validation" class="org.apache.struts2.interceptor.validation.AnnotationValidationInterceptor">
+            //<param name="excludeMethods">input</param>
+            //</interceptor>
             Map<String, String> params = XmlHelper.getParams(interceptorElement);
             InterceptorConfig config = new InterceptorConfig.Builder(name, className)
                     .addParams(params)
                     .location(DomHelper.getLocationObject(interceptorElement))
                     .build();
-
+            //将拦截器配置（name、class、param）添加到package的上下文中
             context.addInterceptorConfig(config);
         }
-
+        //加载拦截器栈
         loadInterceptorStacks(element, context);
     }
 
@@ -979,11 +997,13 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
     private List<Document> loadConfigurationFiles(String fileName, Element includeElement) {
         List<Document> docs = new ArrayList<Document>();
         List<Document> finalDocs = new ArrayList<Document>();
+        //判断是否已经加载过
         if (!includedFileNames.contains(fileName)) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Loading action configurations from: " + fileName);
             }
 
+            //添加到已加载的集合中
             includedFileNames.add(fileName);
 
             Iterator<URL> urls = null;
@@ -1059,6 +1079,7 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
 
                         final String nodeName = child.getNodeName();
 
+                        //判断是否为include节点，如果是，将其添加到Document集合中
                         if ("include".equals(nodeName)) {
                             String includeFileName = child.getAttribute("file");
                             if (includeFileName.indexOf('*') != -1) {
@@ -1108,6 +1129,10 @@ public class XmlConfigurationProvider implements ConfigurationProvider {
      */
     private List<InterceptorMapping> lookupInterceptorReference(PackageConfig.Builder context, Element interceptorRefElement) throws ConfigurationException {
         String refName = interceptorRefElement.getAttribute("name");
+        //interceptor-ref的param，如：
+//        <interceptor-ref name="validation">
+//        <param name="excludeMethods">input,back,cancel,browse</param>
+//        </interceptor-ref>
         Map<String, String> refParams = XmlHelper.getParams(interceptorRefElement);
 
         Location loc = LocationUtils.getLocation(interceptorRefElement);

@@ -220,6 +220,7 @@ public class SpringObjectFactory extends ObjectFactory implements ApplicationCon
         }
         injectApplicationContext(bean);
 
+        //inject bean
         injectInternalBeans(bean);
 
         return bean;

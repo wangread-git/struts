@@ -564,6 +564,8 @@ public class Dispatcher {
             String name = mapping.getName();
             String method = mapping.getMethod();
 
+            //根据container的工厂创建action的代理工厂，然后创建action的代理，ActionProxyFactory是在struts-default.xml设置的
+            //action的代理类保存了action的相关配置，以及调用类（ActionInvocation）
             ActionProxy proxy = getContainer().getInstance(ActionProxyFactory.class).createActionProxy(
                     namespace, name, method, extraContext, true, false);
 
@@ -626,6 +628,7 @@ public class Dispatcher {
 
     /**
      * Create a context map containing all the wrapped request objects
+     * 创建上下文的map
      *
      * @param request The servlet request
      * @param response The servlet response
@@ -646,6 +649,7 @@ public class Dispatcher {
         // session map wrapping the http session
         Map session = new SessionMap(request);
 
+        //servlet全局上下文
         // application map wrapping the ServletContext
         Map application = new ApplicationMap(servletContext);
 

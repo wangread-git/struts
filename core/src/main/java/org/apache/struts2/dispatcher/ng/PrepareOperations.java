@@ -78,6 +78,7 @@ public class PrepareOperations {
             ctx = new ActionContext(new HashMap<String, Object>(oldContext.getContextMap()));
         } else {
             ValueStack stack = dispatcher.getContainer().getInstance(ValueStackFactory.class).createValueStack();
+            //根据request和response创建context
             stack.getContext().putAll(dispatcher.createContextMap(request, response, null));
             ctx = new ActionContext(stack.getContext());
         }

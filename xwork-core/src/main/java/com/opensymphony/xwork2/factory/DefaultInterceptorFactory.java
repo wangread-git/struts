@@ -39,8 +39,10 @@ public class DefaultInterceptorFactory implements InterceptorFactory {
 
         try {
             // interceptor instances are long-lived and used across user sessions, so don't try to pass in any extra context
+            //利用objectFactory创建interceptor
             Interceptor interceptor = (Interceptor) objectFactory.buildBean(interceptorClassName, null);
             reflectionProvider.setProperties(params, interceptor);
+            //初始化interceptor
             interceptor.init();
 
             return interceptor;

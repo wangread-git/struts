@@ -27,12 +27,7 @@ import org.apache.struts2.dispatcher.ng.ExecuteOperations;
 import org.apache.struts2.dispatcher.ng.InitOperations;
 import org.apache.struts2.dispatcher.ng.PrepareOperations;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -86,9 +81,11 @@ public class StrutsPrepareAndExecuteFilter implements StrutsStatics, Filter {
                 chain.doFilter(request, response);
             } else {
                 prepare.setEncodingAndLocale(request, response);
+                //创建context
                 prepare.createActionContext(request, response);
                 prepare.assignDispatcherToThread();
                 request = prepare.wrapRequest(request);
+                //解析request
                 ActionMapping mapping = prepare.findActionMapping(request, response, true);
                 if (mapping == null) {
                     boolean handled = execute.executeStaticResourceRequest(request, response);

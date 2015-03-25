@@ -30,7 +30,6 @@ import com.opensymphony.xwork2.util.logging.LoggerFactory;
 import com.opensymphony.xwork2.util.profiling.UtilTimerStack;
 import ognl.MethodFailedException;
 import ognl.NoSuchPropertyException;
-import ognl.OgnlException;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -192,11 +191,14 @@ public class DefaultActionInvocation implements ActionInvocation {
             return ret;
         }
         ActionConfig config = proxy.getConfig();
+
+        //取出action配置的所有result
         Map<String, ResultConfig> results = config.getResults();
 
         ResultConfig resultConfig = null;
 
         try {
+            //取出和ResultCode相匹配的Result配置，默认的resultCode为success
             resultConfig = results.get(resultCode);
         } catch (NullPointerException e) {
             if (LOG.isDebugEnabled()) {
@@ -211,6 +213,7 @@ public class DefaultActionInvocation implements ActionInvocation {
 
         if (resultConfig != null) {
             try {
+                //通过objectFactory构造Result
                 return objectFactory.buildResult(resultConfig, invocationContext.getContextMap());
             } catch (Exception e) {
                 if (LOG.isErrorEnabled()) {
@@ -237,6 +240,7 @@ public class DefaultActionInvocation implements ActionInvocation {
             }
 
             if (interceptors.hasNext()) {
+                //开始递归的调用拦截器
                 final InterceptorMapping interceptor = interceptors.next();
                 String interceptorMsg = "interceptor: " + interceptor.getName();
                 UtilTimerStack.push(interceptorMsg);
@@ -247,6 +251,7 @@ public class DefaultActionInvocation implements ActionInvocation {
                     UtilTimerStack.pop(interceptorMsg);
                 }
             } else {
+                //当最后一个拦截器走完的时候，会执行下面的方法，开始执行action
                 resultCode = invokeActionOnly();
             }
 
@@ -269,6 +274,7 @@ public class DefaultActionInvocation implements ActionInvocation {
                 }
 
                 // now execute the result, if we're supposed to
+                //创建proxy的时候就把executeResult设置为true了
                 if (proxy.getExecuteResult()) {
                     executeResult();
                 }
@@ -292,6 +298,7 @@ public class DefaultActionInvocation implements ActionInvocation {
         String timerKey = "actionCreate: " + proxy.getActionName();
         try {
             UtilTimerStack.push(timerKey);
+            //通过objectFactory创建action
             action = objectFactory.buildAction(proxy.getActionName(), proxy.getNamespace(), proxy.getConfig(), contextMap);
         } catch (InstantiationException e) {
             throw new XWorkException("Unable to intantiate Action!", e, proxy.getConfig());
@@ -366,6 +373,8 @@ public class DefaultActionInvocation implements ActionInvocation {
         try {
             UtilTimerStack.push(timerKey);
             if (result != null) {
+                //执行Result，StrutsResultSupport，真正执行的是doExecute，StrutsResultSupport的doExecute是一个abstract方法，
+                //需要子类继承，例如VelocityResult
                 result.execute(this);
             } else if (resultCode != null && !Action.NONE.equals(resultCode)) {
                 throw new ConfigurationException("No result defined for action " + getAction().getClass().getName()
@@ -391,11 +400,12 @@ public class DefaultActionInvocation implements ActionInvocation {
         if (actionContext != null) {
             actionContext.setActionInvocation(this);
         }
-
+        //创建action
         createAction(contextMap);
 
         if (pushAction) {
             stack.push(action);
+            //将action实例添加到上下文中
             contextMap.put("action", action);
         }
 

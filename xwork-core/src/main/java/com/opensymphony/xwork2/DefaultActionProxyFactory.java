@@ -54,6 +54,7 @@ public class DefaultActionProxyFactory implements ActionProxyFactory {
     public ActionProxy createActionProxy(String namespace, String actionName, String methodName, Map<String, Object> extraContext, boolean executeResult, boolean cleanupContext) {
         
         ActionInvocation inv = new DefaultActionInvocation(extraContext, true);
+        //注入
         container.inject(inv);
         return createActionProxy(inv, namespace, actionName, methodName, executeResult, cleanupContext);
     }
